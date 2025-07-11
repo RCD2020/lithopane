@@ -22,7 +22,8 @@ if len(sys.argv) < 2:
 path = sys.argv[1]
 
 if (not os.path.isfile(path)):
-    print(f'\033[31m"{path}" not found.')
+    print(f'\033[31m"{path}" not found.\033[00m')
+    exit()
 
 
 dim_flag = False
@@ -38,9 +39,9 @@ for x in sys.argv[2:]:
     if x == '-d':
         dim_flag = True
 
-        
 
-img = Image.open('images\IMG_5660 reszied.jpg')
+
+img = Image.open(path)
 
 
 def stringify(v):
