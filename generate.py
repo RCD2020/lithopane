@@ -42,7 +42,7 @@ for x in sys.argv[2:]:
 
 
 file_name = '.'.join(path.split('/')[-1].split('\\')[-1].split('.')[:-1])
-out_path = 'stl files/' + file_name + f'_{MAX_DIM}' + '.stl'
+out_path = 'stl files/' + file_name + f'_{MAX_DIM}mm' + '.stl'
 
 img = Image.open(path)
 
