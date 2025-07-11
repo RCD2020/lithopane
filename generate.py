@@ -25,8 +25,6 @@ if (not os.path.isfile(path)):
     print(f'\033[31m"{path}" not found.\033[00m')
     exit()
     
-file_name = 'stl files/' + '.'.join(path.split('/')[-1].split('\\')[-1].split('.')[:-1]) + '.stl'
-
 
 dim_flag = False
 for x in sys.argv[2:]:
@@ -42,6 +40,9 @@ for x in sys.argv[2:]:
         dim_flag = True
 
 
+
+file_name = '.'.join(path.split('/')[-1].split('\\')[-1].split('.')[:-1])
+out_path = 'stl files/' + file_name + f'_{MAX_DIM}' + '.stl'
 
 img = Image.open(path)
 
@@ -155,7 +156,7 @@ print('\nImage Processed!')
 
 print('Generating STL...')
 
-with open(file_name, 'w') as f:
+with open(out_path, 'w') as f:
 
     f.write('solid test\n')
 
