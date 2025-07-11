@@ -1,11 +1,44 @@
+import sys
+import os
+
 from PIL import Image
 import numpy as np
 
 
-MAX_DIM = 100
+MAX_DIM = 50
 BACK_THICKNESS = .25
 
 
+
+
+if len(sys.argv) < 2:
+    print(
+        'Usage: generate.py {PATH OF IMAGE}\n'
+        'Optional:\n'
+        '   -d {DIMENSION OF LONGEST SIDE}'
+    )
+
+
+path = sys.argv[1]
+
+if (not os.path.isfile(path)):
+    print(f'\033[31m"{path}" not found.')
+
+
+dim_flag = False
+for x in sys.argv[2:]:
+    if dim_flag:
+        try:
+            MAX_DIM = int(x)
+            dim_flag = False
+        except:
+            print(f'\033[31m"{x}" is an invalid value for MAX_DIM (-d)\033[00m')
+            exit()
+
+    if x == '-d':
+        dim_flag = True
+
+        
 
 img = Image.open('images\IMG_5660 reszied.jpg')
 
