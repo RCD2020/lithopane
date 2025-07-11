@@ -24,6 +24,8 @@ path = sys.argv[1]
 if (not os.path.isfile(path)):
     print(f'\033[31m"{path}" not found.\033[00m')
     exit()
+    
+file_name = 'stl files/' + '.'.join(path.split('/')[-1].split('\\')[-1].split('.')[:-1]) + '.stl'
 
 
 dim_flag = False
@@ -153,7 +155,7 @@ print('\nImage Processed!')
 
 print('Generating STL...')
 
-with open('out.stl', 'w') as f:
+with open(file_name, 'w') as f:
 
     f.write('solid test\n')
 
