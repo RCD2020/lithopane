@@ -15,6 +15,8 @@ vertex_map = {}
 tris = []
 
 def get_vertex(vert):
+    vert = [f'{x:.2f}' for x in vert]
+
     pointer = vertex_map
 
     for i in range(len(vert)):
@@ -23,12 +25,10 @@ def get_vertex(vert):
             if i == 2:
                 pointer[vert[i]] = len(vertexes)
                 vertexes.append(vert)
-
-                return len(vertexes)-1
             else:
                 pointer[vert[i]] = {}
 
-            pointer = pointer[vert[i]]
+        pointer = pointer[vert[i]]
 
     return pointer
     
@@ -45,8 +45,8 @@ y_scale = 3
 
 print('Reading Image...')
 i = 1
-for x in range(w-1):
-    for y in range(h-1):
+for x in range(10):
+    for y in range(5):
         x1 = x * s_modi
         y1 = y * s_modi
 
@@ -71,8 +71,13 @@ for x in range(w-1):
         v3 = get_vertex(v3)
         v4 = get_vertex(v4)
 
+        tris.append((v1, v2, v3))
+        tris.append((v2, v3, v4))
+
 
         i += 1
 
 # print(vertex_map)
-print('\n', len(vertexes))
+# print('\n', len(vertexes))
+# print(w*h)
+# print('\n', tris)
