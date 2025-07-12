@@ -18,11 +18,11 @@
      <triangle v1="0" v2="1" v3="2"/>
      <triangle v1="0" v2="2" v3="3" paint_color="8"/>
      <triangle v1="4" v2="3" v3="2" paint_color="1C"/>
-     <triangle v1="4" v2="2" v3="5"/>
-     <triangle v1="5" v2="2" v3="1"/>
-     <triangle v1="5" v2="1" v3="6"/>
-     <triangle v1="6" v2="7" v3="4"/>
-     <triangle v1="6" v2="4" v3="5"/>
+     <triangle v1="4" v2="2" v3="5" paint_color="8"/>
+     <triangle v1="5" v2="2" v3="1" paint_color="1C"/>
+     <triangle v1="5" v2="1" v3="6" paint_color="1C"/>
+     <triangle v1="6" v2="7" v3="4" paint_color="1C"/>
+     <triangle v1="6" v2="4" v3="5" paint_color="8"/>
      <triangle v1="7" v2="0" v3="3" paint_color="0C"/>
      <triangle v1="7" v2="3" v3="4" paint_color="0C"/>
      <triangle v1="6" v2="1" v3="0"/>
