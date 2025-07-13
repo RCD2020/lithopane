@@ -104,10 +104,26 @@ def randColor():
 
 def isRed(r, g, b):
     return (
-        g and b
+        (g or b)
         and r / (g + b + r) > .3
         and r / (g + r) > .6
         and r / (b + r) > .6
+    )
+
+def isYellow(r, g, b):
+    return (
+        (r or g or b)
+        and (r + g) / (r + g + b) > .8
+        and r > 128
+        and g > 128
+    )
+
+def isBlue(r, g, b):
+    return (
+        (g or r)
+        and b / (g + b + r) > .3
+        and b / (g + b) > .6
+        and b / (r + b) > .6
     )
 
 
@@ -120,9 +136,9 @@ pixels = img.load()
 for x in range(SIZE):
     for y in range(SIZE):
         color = randColor()
-        while (not isRed(*color)):
+        while (not isBlue(*color)):
             color = randColor()
         
         pixels[x, y] = color
 
-img.save('palette_ref9.png')
+img.save('palette_ref11.png')

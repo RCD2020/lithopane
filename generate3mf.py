@@ -6,6 +6,7 @@ from PIL import Image
 
 MAX_DIM = 50
 BACKING = .25
+COLOR_BOTTOM_FACE = True
 
 
 path = 'images/Superman Logo.png'
@@ -14,17 +15,52 @@ vertexes = []
 vertex_map = {}
 tris = []
 colors = {
+    'white': {'id': None, 'h_modi': 1},
     'red': {'id': '8', 'h_modi': .7},
     'yellow': {'id': '0C', 'h_modi': .9},
-    'blue': {'id': '1C', 'h_modi': .5}
+    'blue': {'id': '1C', 'h_modi': .1},
+    'light_blue': {'id': '2C', 'h_modi': .3}
 }
-def isRed(r, g, b):
-    return (
-        g and b
-        and r / (g + b + r) > .3
-        and r / (g + r) > .6
-        and r / (b + r) > .6
-    )
+def color_map(rgb):
+    r, g, b = rgb[0:3]
+
+    def isRed(r, g, b):
+        return (
+            (g or b)
+            and r / (g + b + r) > .3
+            and r / (g + r) > .6
+            and r / (b + r) > .6
+        )
+    
+    def isYellow(r, g, b):
+        return (
+            (r or g or b)
+            and (r + g) / (r + g + b) > .8
+            and r > 128
+            and g > 128
+        )
+    
+    def isBlue(r, g, b):
+        return (
+            (g or r)
+            and b / (g + b + r) > .3
+            and b / (g + b) > .6
+            and b / (r + b) > .6
+        )
+
+    
+    if isRed(r, g, b):
+        return colors['red']
+    
+    if isYellow(r, g, b):
+        return colors['yellow']
+    
+    if isBlue(r, g, b):
+        return colors['blue']
+    
+
+    return colors['white']
+
 
 def get_vertex(vert):
     vert = [f'{x:.4f}' for x in vert]
@@ -67,10 +103,12 @@ for x in range(w-1):
         yh = [[], []]
         for p1 in range(2):
             for p2 in range(2):
+                color = color_map(pixels[x+p1, y+p2])
+
                 yh[p1].append(
                     (
                         -(sum(pixels[x+p1, y+p2]) / len(pixels[x, y]) / 255) + 1
-                    ) * y_scale
+                    ) * y_scale * color['h_modi']
                 )
 
         v1 = get_vertex((x1+s_modi, yh[1][0], y1       ))
@@ -83,29 +121,32 @@ for x in range(w-1):
         v7 = get_vertex((x1+s_modi, -BACKING, y1+s_modi))
         v8 = get_vertex((x1+s_modi, -BACKING, y1       ))
 
-        color = '8' if isRed(*pixels[x,y][0:3]) else None
+        
 
-        tris.append((v1, v2, v3, color))
-        tris.append((v4, v1, v3, color))
+        tris.append((v1, v2, v3, color['id']))
+        tris.append((v4, v1, v3, color['id']))
 
-        tris.append((v5, v8, v6))
-        tris.append((v8, v7, v6))
+        if (not COLOR_BOTTOM_FACE):
+            color = colors['white']
+
+        tris.append((v5, v8, v6, color['id']))
+        tris.append((v8, v7, v6, color['id']))
 
         if x == 0:
-            tris.append((v5, v6, v2))
-            tris.append((v2, v6, v3))
+            tris.append((v5, v6, v2, color['id']))
+            tris.append((v2, v6, v3, color['id']))
         
         if x+2 == w:
-            tris.append((v7, v8, v1))
-            tris.append((v7, v1, v4))
+            tris.append((v7, v8, v1, color['id']))
+            tris.append((v7, v1, v4, color['id']))
 
         if y == 0:
-            tris.append((v8, v5, v2))
-            tris.append((v8, v2, v1))
+            tris.append((v8, v5, v2, color['id']))
+            tris.append((v8, v2, v1, color['id']))
 
         if y+2 == h:
-            tris.append((v6, v7, v3))
-            tris.append((v3, v7, v4))
+            tris.append((v6, v7, v3, color['id']))
+            tris.append((v3, v7, v4, color['id']))
 
 
 
