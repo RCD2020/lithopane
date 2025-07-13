@@ -9,10 +9,22 @@ BACKING = .25
 
 
 path = 'images/Superman Logo.png'
-out_path = '3mf files/object_1.model'
+out_path = 'Reference/3D/Objects/object_1.model'
 vertexes = []
 vertex_map = {}
 tris = []
+colors = {
+    'red': {'id': '8', 'h_modi': .7},
+    'yellow': {'id': '0C', 'h_modi': .9},
+    'blue': {'id': '1C', 'h_modi': .5}
+}
+def isRed(r, g, b):
+    return (
+        g and b
+        and r / (g + b + r) > .3
+        and r / (g + r) > .6
+        and r / (b + r) > .6
+    )
 
 def get_vertex(vert):
     vert = [f'{x:.4f}' for x in vert]
@@ -71,8 +83,10 @@ for x in range(w-1):
         v7 = get_vertex((x1+s_modi, -BACKING, y1+s_modi))
         v8 = get_vertex((x1+s_modi, -BACKING, y1       ))
 
-        tris.append((v1, v2, v3, '8'))
-        tris.append((v4, v1, v3, '8'))
+        color = '8' if isRed(*pixels[x,y][0:3]) else None
+
+        tris.append((v1, v2, v3, color))
+        tris.append((v4, v1, v3, color))
 
         tris.append((v5, v8, v6))
         tris.append((v8, v7, v6))
@@ -151,7 +165,7 @@ with open(out_path, 'w') as f:
 
         tri = f'<triangle v1="{x[0]}" v2="{x[1]}" v3="{x[2]}" '
         
-        if len(x) == 4:
+        if len(x) == 4 and x[3]:
             tri += 'paint_color="' + x[3] + '"'
         
         tri += '/>\n'
