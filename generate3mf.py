@@ -71,8 +71,8 @@ for x in range(w-1):
         v7 = get_vertex((x1+s_modi, -BACKING, y1+s_modi))
         v8 = get_vertex((x1+s_modi, -BACKING, y1       ))
 
-        tris.append((v1, v2, v3))
-        tris.append((v4, v1, v3))
+        tris.append((v1, v2, v3, '8'))
+        tris.append((v4, v1, v3, '8'))
 
         tris.append((v5, v8, v6))
         tris.append((v8, v7, v6))
@@ -149,7 +149,15 @@ with open(out_path, 'w') as f:
     for x in tris:
         print(f'\r{i_t}/{len(tris)}', end='')
 
-        f.write(f'<triangle v1="{x[0]}" v2="{x[1]}" v3="{x[2]}" />\n')
+        tri = f'<triangle v1="{x[0]}" v2="{x[1]}" v3="{x[2]}" '
+        
+        if len(x) == 4:
+            tri += 'paint_color="' + x[3] + '"'
+        
+        tri += '/>\n'
+
+
+        f.write(tri)
 
         i_t += 1
     f.write('</triangles>\n')
