@@ -1,0 +1,18 @@
+{
+    "name": "sky blue",
+    "hex": "#0086D6",
+    "rgb": [0, 134, 214],
+    "height_modifier": 0.6,
+    "filters": [
+        {
+            "type": "hue",
+            "operation": "<",
+            "value": 0.6
+        },
+        {
+            "type": "hue",
+            "operation": ">",
+            "value": 0.45
+        }
+    ]
+}

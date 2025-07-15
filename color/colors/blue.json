@@ -1,0 +1,18 @@
+{
+    "name": "blue",
+    "hex": "#0A2989",
+    "rgb": [10, 41, 137],
+    "height_modifier": 0.8,
+    "filters": [
+        {
+            "type": "hue",
+            "operation": "<",
+            "value": 0.72
+        },
+        {
+            "type": "hue",
+            "operation": ">",
+            "value": 0.59
+        }
+    ]
+}

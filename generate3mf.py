@@ -1,65 +1,98 @@
 import sys
 import os
+import colorsys
+import json
 
 from PIL import Image
 
 
-MAX_DIM = 50
+MAX_DIM = 200
 BACKING = .25
-COLOR_BOTTOM_FACE = True
+# COLOR_BOTTOM_FACE = True
 
 
-path = 'images/Superman Logo.png'
+path = 'images/super poster 3 resize.jpg'
 out_path = 'Reference/3D/Objects/object_1.model'
 vertexes = []
 vertex_map = {}
 tris = []
-colors = {
-    'white': {'id': None, 'h_modi': 1},
-    'red': {'id': '8', 'h_modi': .7},
-    'yellow': {'id': '0C', 'h_modi': .9},
-    'blue': {'id': '1C', 'h_modi': .1},
-    'light_blue': {'id': '2C', 'h_modi': .3}
-}
-def color_map(rgb):
-    r, g, b = rgb[0:3]
+COLOR_MAP_PATH = 'color/super_color_map_2.json'
+FILTER_PATH    = 'filters/super poster 3 resize_filter.png'
 
-    def isRed(r, g, b):
-        return (
-            (g or b)
-            and r / (g + b + r) > .3
-            and r / (g + r) > .6
-            and r / (b + r) > .6
-        )
+
+def load_colors(path):
+    with open(path, 'r') as f:
+        color_map = json.loads(f.read())
     
-    def isYellow(r, g, b):
-        return (
-            (r or g or b)
-            and (r + g) / (r + g + b) > .8
-            and r > 128
-            and g > 128
-        )
+    colors = []
+    for x in color_map['colors']:
+        with open(x['path'], 'r') as f:
+            color = json.loads(f.read())
+            color['id'] = x['id']
+
+            colors.append(color)
+
+    return colors
+
+
+def resolve_rgb(rgb, color_map):
+    h, l, s = colorsys.rgb_to_hls(rgb[0]/255, rgb[1]/255, rgb[2]/255)
+
+    def resolve_filter(filter, h, l, s):
+        name = filter['type']
+
+        if name == 'or':
+            evaluation = resolve_filter(filter['filters'][0], h, l, s)
+
+            for x in filter['filters'][1:]:
+                evaluation = evaluation or resolve_filter(x, h, l, s)
+
+            return evaluation
     
-    def isBlue(r, g, b):
-        return (
-            (g or r)
-            and b / (g + b + r) > .3
-            and b / (g + b) > .6
-            and b / (r + b) > .6
+        type_mapping = {
+            'hue': h,
+            'lightness': l,
+            'saturation': s
+        }
+        operation_mapping = {
+            '<': lambda a, b : a < b,
+            '>': lambda a, b : a > b
+        }
+
+        return operation_mapping[filter['operation']](
+            type_mapping[name], filter['value']
         )
 
+    for color in color_map:
+        evaluation = resolve_filter(color['filters'][0], h, l, s)
+        
+        for filter in color['filters'][1:]:
+            evaluation = evaluation and resolve_filter(filter, h, l, s)
+        
+        if evaluation:
+            return color
     
-    if isRed(r, g, b):
-        return colors['red']
-    
-    if isYellow(r, g, b):
-        return colors['yellow']
-    
-    if isBlue(r, g, b):
-        return colors['blue']
-    
+    return {
+        'id': None,
+        'height_modifier': 1.0,
+        'rgb': [255, 255, 255]
+    }
 
-    return colors['white']
+
+def load_filter(filter_path):
+    img = Image.open(filter_path)
+    w, h = img.size
+
+    filter = [[1] * h for _ in range(w)]
+
+    pixels = img.load()
+
+    for x in range(w):
+        for y in range(h):
+            if (pixels[x, y][0:3] == (0,0,0)):
+                filter[x][y] = 0
+
+    return filter
 
 
 def get_vertex(vert):
@@ -90,6 +123,9 @@ s_modi = MAX_DIM / max(w, h)
 pixels = img.load()
 y_scale = 3
 
+color_map  = load_colors(COLOR_MAP_PATH)
+filter_map = load_filter(FILTER_PATH)
+
 
 print('Reading Image...')
 i = 1
@@ -103,12 +139,15 @@ for x in range(w-1):
         yh = [[], []]
         for p1 in range(2):
             for p2 in range(2):
-                color = color_map(pixels[x+p1, y+p2])
+                if filter_map[x+p1][y+p2]:
+                    color = resolve_rgb(pixels[x+p1, y+p2], color_map)
+                else:
+                    color = {'id': None, 'height_modifier': 1.0}
 
                 yh[p1].append(
                     (
                         -(sum(pixels[x+p1, y+p2]) / len(pixels[x, y]) / 255) + 1
-                    ) * y_scale * color['h_modi']
+                    ) * y_scale * color['height_modifier']
                 )
 
         v1 = get_vertex((x1+s_modi, yh[1][0], y1       ))
@@ -121,13 +160,18 @@ for x in range(w-1):
         v7 = get_vertex((x1+s_modi, -BACKING, y1+s_modi))
         v8 = get_vertex((x1+s_modi, -BACKING, y1       ))
 
+
+        if filter_map[x][y]:
+            color = resolve_rgb(pixels[x, y], color_map)
+        else:
+            color = {'id': None, 'height_modifier': 1.0}
         
 
         tris.append((v1, v2, v3, color['id']))
         tris.append((v4, v1, v3, color['id']))
 
-        if (not COLOR_BOTTOM_FACE):
-            color = colors['white']
+        # if (not COLOR_BOTTOM_FACE):
+        #     color = colors['white']
 
         tris.append((v5, v8, v6, color['id']))
         tris.append((v8, v7, v6, color['id']))

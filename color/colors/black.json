@@ -1,0 +1,13 @@
+{
+    "name": "black",
+    "hex": "#000000",
+    "rgb": [0, 0, 0],
+    "height_modifier": 0.2,
+    "filters": [
+        {
+            "type": "lightness",
+            "operation": "<",
+            "value": 0.1
+        }
+    ]
+}
