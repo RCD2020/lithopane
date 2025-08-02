@@ -6,18 +6,19 @@ import json
 from PIL import Image
 
 
-MAX_DIM = 75
+MAX_DIM = 200
 BACKING = .25
 # COLOR_BOTTOM_FACE = True
 
 
-path = 'images/Jeran Cat resize.jpg'
+path = 'images/super poster 3 resize.jpg'
 out_path = 'Reference/3D/Objects/object_1.model'
-vertexes = []
+vertexes = {}
 vertex_map = {}
-tris = []
+tris = {}
 COLOR_MAP_PATH = 'color/super_color_map_2.json'
 FILTER_PATH    = 'filters/super poster 3 resize_filter.png'
+BLANK = {'id': None, 'height_modifier': 1.0, 'name': 'white'}
 
 
 def load_colors(path):
@@ -35,7 +36,10 @@ def load_colors(path):
     return colors
 
 
-def resolve_rgb(rgb, color_map):
+def resolve_rgb(rgb, color_map, filter_map_value):
+    if not filter_map_value:
+        return BLANK
+
     h, l, s = colorsys.rgb_to_hls(rgb[0]/255, rgb[1]/255, rgb[2]/255)
 
     def resolve_filter(filter, h, l, s):
@@ -75,7 +79,8 @@ def resolve_rgb(rgb, color_map):
     return {
         'id': None,
         'height_modifier': 1.0,
-        'rgb': [255, 255, 255]
+        'rgb': [255, 255, 255],
+        'name': 'white'
     }
 
 
@@ -95,17 +100,23 @@ def load_filter(filter_path):
     return filter
 
 
-def get_vertex(vert):
+def get_vertex(vert, color):
     vert = [f'{x:.4f}' for x in vert]
 
-    pointer = vertex_map
+    if color['name'] not in vertex_map.keys():
+        vertex_map[color['name']] = {}
+
+    pointer = vertex_map[color['name']]
+
+    if color['name'] not in vertexes.keys():
+        vertexes[color['name']] = []
 
     for i in range(len(vert)):
 
         if vert[i] not in pointer:
             if i == 2:
-                pointer[vert[i]] = len(vertexes)
-                vertexes.append(vert)
+                pointer[vert[i]] = len(vertexes[color['name']])
+                vertexes[color['name']].append(vert)
             else:
                 pointer[vert[i]] = {}
 
@@ -136,61 +147,72 @@ for x in range(w-1):
 
         print(f'\r{i}/{(w-1)*(h-1)}', end='')
 
+        color = resolve_rgb(pixels[x, y], color_map, filter_map[x][y])
+
         yh = [[], []]
         for p1 in range(2):
             for p2 in range(2):
-                # if filter_map[x+p1][y+p2]:
-                #     color = resolve_rgb(pixels[x+p1, y+p2], color_map)
-                # else:
-                color = {'id': None, 'height_modifier': 1.0}
-
                 yh[p1].append(
                     (
                         -(sum(pixels[x+p1, y+p2]) / len(pixels[x, y]) / 255) + 1
                     ) * y_scale * color['height_modifier']
                 )
 
-        v1 = get_vertex((x1+s_modi, yh[1][0], y1       ))
-        v2 = get_vertex((x1       , yh[0][0], y1       ))
-        v3 = get_vertex((x1       , yh[0][1], y1+s_modi))
-        v4 = get_vertex((x1+s_modi, yh[1][1], y1+s_modi))
 
-        v5 = get_vertex((x1       , -BACKING, y1       ))
-        v6 = get_vertex((x1       , -BACKING, y1+s_modi))
-        v7 = get_vertex((x1+s_modi, -BACKING, y1+s_modi))
-        v8 = get_vertex((x1+s_modi, -BACKING, y1       ))
+        north_color = (
+            resolve_rgb(pixels[x-1,y], color_map, filter_map[x-1][y])
+            if x != 0 else BLANK
+        )
+        south_color = (
+            resolve_rgb(pixels[x+1,y], color_map, filter_map[x+1][y])
+            if x+2 != w else BLANK
+        )
+        east_color = (
+            resolve_rgb(pixels[x,y-1], color_map, filter_map[x][y-1])
+            if y != 0 else BLANK
+        )
+        west_color = (
+            resolve_rgb(pixels[x,y+1], color_map, filter_map[x][y+1])
+            if y+2 != h else BLANK
+        )
 
 
-        # if filter_map[x][y]:
-        #     color = resolve_rgb(pixels[x, y], color_map)
-        # else:
-        color = {'id': None, 'height_modifier': 1.0}
         
 
-        tris.append((v1, v2, v3, color['id']))
-        tris.append((v4, v1, v3, color['id']))
+        v1 = get_vertex((x1+s_modi, yh[1][0], y1       ), color)
+        v2 = get_vertex((x1       , yh[0][0], y1       ), color)
+        v3 = get_vertex((x1       , yh[0][1], y1+s_modi), color)
+        v4 = get_vertex((x1+s_modi, yh[1][1], y1+s_modi), color)
 
-        # if (not COLOR_BOTTOM_FACE):
-        #     color = colors['white']
+        v5 = get_vertex((x1       , -BACKING, y1       ), color)
+        v6 = get_vertex((x1       , -BACKING, y1+s_modi), color)
+        v7 = get_vertex((x1+s_modi, -BACKING, y1+s_modi), color)
+        v8 = get_vertex((x1+s_modi, -BACKING, y1       ), color)
 
-        tris.append((v5, v8, v6, color['id']))
-        tris.append((v8, v7, v6, color['id']))
+        if color['name'] not in tris.keys():
+            tris[color['name']] = []
 
-        if x == 0:
-            tris.append((v5, v6, v2, color['id']))
-            tris.append((v2, v6, v3, color['id']))
+        tris[color['name']].append((v1, v2, v3, color['id']))
+        tris[color['name']].append((v4, v1, v3, color['id']))
+
+        tris[color['name']].append((v5, v8, v6, color['id']))
+        tris[color['name']].append((v8, v7, v6, color['id']))
+
+        if x == 0 or north_color['name'] != color['name']:
+            tris[color['name']].append((v5, v6, v2, color['id']))
+            tris[color['name']].append((v2, v6, v3, color['id']))
         
-        if x+2 == w:
-            tris.append((v7, v8, v1, color['id']))
-            tris.append((v7, v1, v4, color['id']))
+        if x+2 == w or south_color['name'] != color['name']:
+            tris[color['name']].append((v7, v8, v1, color['id']))
+            tris[color['name']].append((v7, v1, v4, color['id']))
 
-        if y == 0:
-            tris.append((v8, v5, v2, color['id']))
-            tris.append((v8, v2, v1, color['id']))
+        if y == 0 or east_color['name'] != color['name']:
+            tris[color['name']].append((v8, v5, v2, color['id']))
+            tris[color['name']].append((v8, v2, v1, color['id']))
 
-        if y+2 == h:
-            tris.append((v6, v7, v3, color['id']))
-            tris.append((v3, v7, v4, color['id']))
+        if y+2 == h or west_color['name'] != color['name']:
+            tris[color['name']].append((v6, v7, v3, color['id']))
+            tris[color['name']].append((v3, v7, v4, color['id']))
 
 
 
@@ -231,8 +253,8 @@ with open(out_path, 'w') as f:
     print('Writing Vertices...')
     f.write('<vertices>\n')
     i_v = 1
-    for x in vertexes:
-        print(f'\r{i_v}/{len(vertexes)}', end='')
+    for x in vertexes['white']:
+        print(f'\r{i_v}/{len(vertexes["white"])}', end='')
 
         f.write(f'<vertex x="{x[0]}" y="{x[1]}" z="{x[2]}"/>\n')
 
@@ -245,8 +267,8 @@ with open(out_path, 'w') as f:
     print('Writing Triangles...')
     f.write('<triangles>\n')
     i_t = 1
-    for x in tris:
-        print(f'\r{i_t}/{len(tris)}', end='')
+    for x in tris['white']:
+        print(f'\r{i_t}/{len(tris["white"])}', end='')
 
         tri = f'<triangle v1="{x[0]}" v2="{x[1]}" v3="{x[2]}" '
         
