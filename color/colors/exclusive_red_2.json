@@ -1,0 +1,38 @@
+{
+    "name": "red",
+    "hex": "#C12E1F",
+    "rgb": [193, 46, 31],
+    "height_modifier": 0.3,
+    "filters": [
+        {
+            "type": "or",
+            "filters": [
+                {
+                    "type": "hue",
+                    "operation": "<",
+                    "value": 0.06
+                },
+                {
+                    "type": "hue",
+                    "operation": ">",
+                    "value": 0.9
+                }
+            ]
+        },
+        {
+            "type": "lightness",
+            "operation": "<",
+            "value": 0.9
+        },
+        {
+            "type": "lightness",
+            "operation": ">",
+            "value": 0.2
+        },
+        {
+            "type": "saturation",
+            "operation": ">",
+            "value": 0.1
+        }
+    ]
+}

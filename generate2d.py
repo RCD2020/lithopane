@@ -1,0 +1,276 @@
+import sys
+import os
+import colorsys
+import json
+
+from PIL import Image
+
+
+MAX_DIM = 240
+BACKING = 1.2
+# COLOR_BOTTOM_FACE = True
+
+
+path = 'images/superman_red_blue_cropped_2.jpg'
+out_path = 'Reference/3D/Objects/object_1.model'
+vertexes = []
+vertex_map = {}
+tris = []
+COLOR_MAP_PATH = 'color/super_red_blue_color_map.json'
+# FILTER_PATH    = 'filters/super poster 3 resize_filter.png'
+
+
+def load_colors(path):
+    with open(path, 'r') as f:
+        color_map = json.loads(f.read())
+    
+    colors = []
+    for x in color_map['colors']:
+        with open(x['path'], 'r') as f:
+            color = json.loads(f.read())
+            color['id'] = x['id']
+
+            colors.append(color)
+
+    return colors
+
+
+def resolve_rgb(rgb, color_map):
+    h, l, s = colorsys.rgb_to_hls(rgb[0]/255, rgb[1]/255, rgb[2]/255)
+
+    def resolve_filter(filter, h, l, s):
+        name = filter['type']
+
+        if name == 'or':
+            evaluation = resolve_filter(filter['filters'][0], h, l, s)
+
+            for x in filter['filters'][1:]:
+                evaluation = evaluation or resolve_filter(x, h, l, s)
+
+            return evaluation
+    
+        type_mapping = {
+            'hue': h,
+            'lightness': l,
+            'saturation': s
+        }
+        operation_mapping = {
+            '<': lambda a, b : a < b,
+            '>': lambda a, b : a > b
+        }
+
+        return operation_mapping[filter['operation']](
+            type_mapping[name], filter['value']
+        )
+
+    for color in color_map:
+        evaluation = resolve_filter(color['filters'][0], h, l, s)
+        
+        for filter in color['filters'][1:]:
+            evaluation = evaluation and resolve_filter(filter, h, l, s)
+        
+        if evaluation:
+            return color
+    
+    return {
+        'id': None,
+        'height_modifier': 1.0,
+        'rgb': [255, 255, 255]
+    }
+
+
+def load_filter(filter_path):
+    img = Image.open(filter_path)
+    w, h = img.size
+
+    filter = [[1] * h for _ in range(w)]
+
+    pixels = img.load()
+
+    for x in range(w):
+        for y in range(h):
+            if (pixels[x, y][0:3] == (0,0,0)):
+                filter[x][y] = 0
+
+    return filter
+
+
+def get_vertex(vert):
+    vert = [f'{x:.4f}' for x in vert]
+
+    pointer = vertex_map
+
+    for i in range(len(vert)):
+
+        if vert[i] not in pointer:
+            if i == 2:
+                pointer[vert[i]] = len(vertexes)
+                vertexes.append(vert)
+            else:
+                pointer[vert[i]] = {}
+
+        pointer = pointer[vert[i]]
+
+    return pointer
+    
+
+
+
+img = Image.open(path)
+
+w, h   = img.size
+s_modi = MAX_DIM / max(w, h)
+pixels = img.load()
+y_scale = 0
+
+color_map  = load_colors(COLOR_MAP_PATH)
+# filter_map = load_filter(FILTER_PATH)
+
+
+print('Reading Image...')
+i = 1
+for x in range(w-1):
+    for y in range(h-1):
+        x1 = x * s_modi
+        y1 = y * s_modi
+
+        print(f'\r{i}/{(w-1)*(h-1)}', end='')
+
+        # yh = [[], []]
+        # for p1 in range(2):
+        #     for p2 in range(2):
+        #         # if filter_map[x+p1][y+p2]:
+        #         color = resolve_rgb(pixels[x+p1, y+p2], color_map)
+        #         # else:
+        #         # color = {'id': None, 'height_modifier': 1.0}
+
+        #         yh[p1].append(y_scale)
+        #         #     (
+        #         #         -(sum(pixels[x+p1, y+p2]) / len(pixels[x, y]) / 255) + 1
+        #         #     ) * y_scale * color['height_modifier']
+        #         # )
+
+        v1 = get_vertex((x1+s_modi, y_scale, y1       ))
+        v2 = get_vertex((x1       , y_scale, y1       ))
+        v3 = get_vertex((x1       , y_scale, y1+s_modi))
+        v4 = get_vertex((x1+s_modi, y_scale, y1+s_modi))
+
+        v5 = get_vertex((x1       , -BACKING, y1       ))
+        v6 = get_vertex((x1       , -BACKING, y1+s_modi))
+        v7 = get_vertex((x1+s_modi, -BACKING, y1+s_modi))
+        v8 = get_vertex((x1+s_modi, -BACKING, y1       ))
+
+
+        # if filter_map[x][y]:
+        color = resolve_rgb(pixels[x, y], color_map)
+        # else:
+        # color = {'id': None, 'height_modifier': 1.0}
+        
+
+        tris.append((v1, v2, v3, color['id']))
+        tris.append((v4, v1, v3, color['id']))
+
+        # if (not COLOR_BOTTOM_FACE):
+        #     color = colors['white']
+
+        tris.append((v5, v8, v6))
+        tris.append((v8, v7, v6))
+
+        if x == 0:
+            tris.append((v5, v6, v2))
+            tris.append((v2, v6, v3))
+        
+        if x+2 == w:
+            tris.append((v7, v8, v1))
+            tris.append((v7, v1, v4))
+
+        if y == 0:
+            tris.append((v8, v5, v2))
+            tris.append((v8, v2, v1))
+
+        if y+2 == h:
+            tris.append((v6, v7, v3))
+            tris.append((v3, v7, v4))
+
+
+
+
+        i += 1
+
+# print(vertex_map)
+# print('\n', len(vertexes))
+# print(w*h)
+# print('\n', tris)
+
+print('\nImage Processed!')
+
+print('Writing file...')
+
+with open(out_path, 'w') as f:
+    f.write(
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        
+        '<model unit="millimeter" '
+        'xml:lang="en-US" '
+        'xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" '
+        'xmlns:BambuStudio="http://schemas.bambulab.com/package/2021" '
+        'xmlns:p="http://schemas.microsoft.com/3dmanufacturing/production/2015/06" '
+        'requiredextensions="p">\n'
+
+        '<metadata name="BambuStudio:3mfVersion">1</metadata>\n'
+
+        '<resources>\n'
+
+        '<object id="1" p:UUID="00010000-81cb-4c03-9d28-80fed5dfa1dc" '
+        'type="model">\n'
+
+        '<mesh>\n'
+    )
+
+
+    print('Writing Vertices...')
+    f.write('<vertices>\n')
+    i_v = 1
+    for x in vertexes:
+        print(f'\r{i_v}/{len(vertexes)}', end='')
+
+        f.write(f'<vertex x="{x[0]}" y="{x[1]}" z="{x[2]}"/>\n')
+
+        i_v += 1
+    f.write('</vertices>\n')
+    
+    print('\nSuccessfully wrote vertices!')
+
+
+    print('Writing Triangles...')
+    f.write('<triangles>\n')
+    i_t = 1
+    for x in tris:
+        print(f'\r{i_t}/{len(tris)}', end='')
+
+        tri = f'<triangle v1="{x[0]}" v2="{x[1]}" v3="{x[2]}" '
+        
+        if len(x) == 4 and x[3]:
+            tri += 'paint_color="' + x[3] + '"'
+        
+        tri += '/>\n'
+
+
+        f.write(tri)
+
+        i_t += 1
+    f.write('</triangles>\n')
+
+    print('\nSuccessfully wrote triangles!')
+
+
+
+    f.write(
+        '</mesh>\n'
+        '</object>\n'
+        '</resources>\n'
+        '<build/>\n'
+        '</model>'
+    )
+
+print('Successfully wrote file!')
