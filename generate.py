@@ -3,6 +3,7 @@ import os
 from zipfile import ZipFile
 from tempfile import TemporaryFile
 from uuid import uuid4
+from datetime import datetime
 
 from PIL import Image
 
@@ -42,7 +43,8 @@ for x in sys.argv[2:]:
 
 
 file_name = '.'.join(path.split('/')[-1].split('\\')[-1].split('.')[:-1])
-out_path = '3mf files/' + file_name + f'_{MAX_DIM}mm' + '.3mf'
+file_name = file_name + f'_{MAX_DIM}mm'
+out_path = '3mf files/' + file_name + '.3mf'
 
 img = Image.open(path)
 w, h   = img.size
@@ -184,4 +186,56 @@ with TemporaryFile() as f_model:
 
 
     with ZipFile(out_path, 'w') as f:
+        f.writestr('_rels/.rels', (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">\n'
+            ' <Relationship Target="/3D/3dmodel.model" Id="rel-1" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/>\n'
+            '</Relationships>'
+        ))
+
+        f.writestr('3D/_rels/3dmodel.model.rels', (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">\n'
+            ' <Relationship Target="/3D/Objects/object_1.model" Id="rel-1" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/>\n'
+            '</Relationships>'
+        ))
+
         f.writestr('3D/Objects/object_1.model', f_model.read())
+        
+        f.writestr('3D/3dmodel.model', (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:BambuStudio="http://schemas.bambulab.com/package/2021" xmlns:p="http://schemas.microsoft.com/3dmanufacturing/production/2015/06" requiredextensions="p">\n'
+            ' <metadata name="Application">BambuStudio-02.01.01.52</metadata>\n'
+            ' <metadata name="BambuStudio:3mfVersion">1</metadata>\n'
+            ' <metadata name="Copyright"></metadata>\n'
+            f' <metadata name="CreationDate">{datetime.now().strftime("%Y-%m-%d")}</metadata>\n'
+            ' <metadata name="Description"></metadata>\n'
+            ' <metadata name="Designer"></metadata>\n'
+            ' <metadata name="DesignerCover"></metadata>\n'
+            ' <metadata name="DesignerUserId"></metadata>\n'
+            ' <metadata name="License"></metadata>\n'
+            f' <metadata name="ModificationDate">{datetime.now().strftime("%Y-%m-%d")}</metadata>\n'
+            ' <metadata name="Origin">https://github.com/RCD2020/lithopane</metadata>\n'
+            f' <metadata name="Title">{file_name}</metadata>\n'
+            ' <resources>\n'
+            f'  <object id="2" p:UUID="{uuid4()}" type="model">\n'
+            '   <components>\n'
+            f'    <component p:path="/3D/Objects/object_1.model" objectid="1" p:UUID="{uuid4()}" transform="1 0 0 0 1 0 0 0 1 0 0 0"/>\n'
+            '   </components>\n'
+            '  </object>\n'
+            ' </resources>\n'
+            f' <build p:UUID="{uuid4()}">\n'
+            f'  <item objectid="2" p:UUID="{uuid4()}" transform="1 0 0 0 1 0 0 0 1 128 128 1" printable="1"/>\n'
+            ' </build>\n'
+            '</model>\n'
+        ))
+
+        f.writestr('[Content_Types].xml', (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">\n'
+            ' <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>\n'
+            ' <Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/>\n'
+            ' <Default Extension="png" ContentType="image/png"/>\n'
+            ' <Default Extension="gcode" ContentType="text/x.gcode"/>\n'
+            '</Types>'
+        ))
