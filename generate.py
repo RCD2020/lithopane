@@ -1,6 +1,5 @@
 import sys
 import os
-import colorsys
 from zipfile import ZipFile
 from tempfile import TemporaryFile
 from uuid import uuid4
