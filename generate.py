@@ -209,7 +209,7 @@ with TemporaryFile() as f_model:
             ' <metadata name="BambuStudio:3mfVersion">1</metadata>\n'
             ' <metadata name="Copyright"></metadata>\n'
             f' <metadata name="CreationDate">{datetime.now().strftime("%Y-%m-%d")}</metadata>\n'
-            ' <metadata name="Description"></metadata>\n'
+            ' <metadata name="Description">Model generated using https://github.com/RCD2020/lithopane .</metadata>\n'
             ' <metadata name="Designer"></metadata>\n'
             ' <metadata name="DesignerCover"></metadata>\n'
             ' <metadata name="DesignerUserId"></metadata>\n'
