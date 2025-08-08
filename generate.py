@@ -44,7 +44,7 @@ for x in sys.argv[2:]:
 
 file_name = '.'.join(path.split('/')[-1].split('\\')[-1].split('.')[:-1])
 file_name = file_name + f'_{MAX_DIM}mm'
-out_path = '3mf files/' + file_name + '.3mf'
+out_path = file_name + '.3mf'
 
 img = Image.open(path)
 w, h   = img.size
