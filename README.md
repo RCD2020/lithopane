@@ -15,4 +15,4 @@ Otherwise, install using `py -m pip install pillow`
 
 Once installed, script can be run using `py generate.py {path to image}`.
 
-You can specify in mm how large the longest side of the image should be by using the `-d` flag. Example: `py generate.py test.png -d 200` to generate a lithopane where the longest side is 200mm.
+You can specify in mm how large the longest side of the image should be by using the `-d` flag. Example: `py generate.py test.png -d 200` to generate a lithopane where the longest side is 200mm. Otherwise, defaults to 50mm.
